@@ -1,5 +1,5 @@
 {
-  "url": "https://auth.plumsail.com/api/account/users/manage/2fa/enable",
+  "url": "https://auth.plumsail.com/api/account/users/manage/2fa/enable/188779?terminateAllSessions=true",
   "method": "POST",
   "body": "" 
 }
