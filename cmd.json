@@ -1,5 +1,5 @@
 {
-  
-  "url":""
-
+  "url": "https://auth.plumsail.com/api/account/users/manage/2fa/enable",
+  "method": "POST",
+  "body": "" 
 }
